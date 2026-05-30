@@ -5,12 +5,14 @@ import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.Toast
 import com.natkibe.musicplayerpro.MusicPlayerProApp
 import com.natkibe.musicplayerpro.R
 
@@ -23,6 +25,13 @@ class FloatingControlsService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(this)
+        ) {
+            Toast.makeText(this, "SYSTEM_ALERT_WINDOW permission required", Toast.LENGTH_LONG).show()
+            stopSelf()
+            return START_NOT_STICKY
+        }
         show()
         return START_NOT_STICKY
     }
