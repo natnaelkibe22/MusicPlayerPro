@@ -1,4 +1,5 @@
 package com.natkibe.musicplayerpro.library
+
 import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
@@ -6,8 +7,92 @@ import com.natkibe.musicplayerpro.data.AudioDao
 import com.natkibe.musicplayerpro.data.AudioItemEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
 class AudioLibraryRepository(private val context: Context, private val dao: AudioDao) {
-    suspend fun getCachedFolders(): List<AudioFolder> = withContext(Dispatchers.IO) { dao.getAll().groupBy { it.folderName }.map { (name, rows) -> AudioFolder(name, rows.size, rows.first().storageType) }.sortedBy { it.name.lowercase() } }
-    suspend fun getSongs(folder: String): List<AudioItemEntity> = withContext(Dispatchers.IO) { dao.getByFolder(folder) }
-    suspend fun refreshFromMediaStore() = withContext(Dispatchers.IO) { val items = mutableListOf<AudioItemEntity>(); val projection = mutableListOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.SIZE, MediaStore.Audio.Media.DATE_MODIFIED, MediaStore.Audio.Media.MIME_TYPE, MediaStore.Audio.Media.TRACK); if (android.os.Build.VERSION.SDK_INT >= 29) projection.add(MediaStore.Audio.Media.RELATIVE_PATH); context.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection.toTypedArray(), "${MediaStore.Audio.Media.IS_MUSIC} != 0", null, "${MediaStore.Audio.Media.TITLE} ASC")?.use { c -> val idIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID); val titleIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE); val artistIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST); val albumIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM); val durIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION); val sizeIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE); val modIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_MODIFIED); val mimeIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE); val trackIdx=c.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK); val relIdx=if(android.os.Build.VERSION.SDK_INT>=29)c.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH) else -1; while(c.moveToNext()){ val id=c.getLong(idIdx); val rel=if(relIdx>=0)c.getString(relIdx) else null; val folder=rel?.trimEnd('/')?.substringAfterLast('/')?.ifBlank { null } ?: "Music"; items += AudioItemEntity(ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,id).toString(), c.getString(titleIdx)?:"Unknown", c.getString(artistIdx), c.getString(albumIdx), folder, rel, if(rel?.contains("usb",true)==true) "USB/External" else "System/Internal", c.getString(mimeIdx), c.getLong(durIdx), c.getLong(sizeIdx), c.getLong(modIdx), c.getInt(trackIdx)) } }; dao.clear(); dao.upsertAll(items) }
+
+    suspend fun getCachedFolders(): List<AudioFolder> = withContext(Dispatchers.IO) {
+        dao.getAll()
+            .groupBy { it.folderName }
+            .map { (name, rows) -> AudioFolder(name, rows.size, rows.first().storageType) }
+            .sortedBy { it.name.lowercase() }
+    }
+
+    suspend fun getSongs(folder: String): List<AudioItemEntity> = withContext(Dispatchers.IO) {
+        dao.getByFolder(folder)
+    }
+
+    suspend fun searchSongs(query: String): List<AudioItemEntity> = withContext(Dispatchers.IO) {
+        dao.getAll().filter {
+            it.title.contains(query, ignoreCase = true) ||
+            (it.artist?.contains(query, ignoreCase = true) == true)
+        }
+    }
+
+    suspend fun refreshFromMediaStore() = withContext(Dispatchers.IO) {
+        val items = mutableListOf<AudioItemEntity>()
+        val projection = mutableListOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.SIZE,
+            MediaStore.Audio.Media.DATE_MODIFIED,
+            MediaStore.Audio.Media.MIME_TYPE,
+            MediaStore.Audio.Media.TRACK
+        )
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            projection.add(MediaStore.Audio.Media.RELATIVE_PATH)
+        }
+
+        context.contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            projection.toTypedArray(),
+            "${MediaStore.Audio.Media.IS_MUSIC} != 0",
+            null,
+            "${MediaStore.Audio.Media.TITLE} ASC"
+        )?.use { c ->
+            val idIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+            val titleIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val artistIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val albumIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+            val durIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val sizeIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
+            val modIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_MODIFIED)
+            val mimeIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            val trackIdx = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
+            val relIdx = if (android.os.Build.VERSION.SDK_INT >= 29) {
+                c.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
+            } else -1
+
+            while (c.moveToNext()) {
+                val id = c.getLong(idIdx)
+                val rel = if (relIdx >= 0) c.getString(relIdx) else null
+                val folder = rel?.trimEnd('/')
+                    ?.substringAfterLast('/')
+                    ?.ifBlank { null } ?: "Music"
+
+                items += AudioItemEntity(
+                    uri = ContentUris.withAppendedId(
+                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
+                    ).toString(),
+                    title = c.getString(titleIdx) ?: "Unknown",
+                    artist = c.getString(artistIdx),
+                    album = c.getString(albumIdx),
+                    folderName = folder,
+                    relativePath = rel,
+                    storageType = if (rel?.contains("usb", true) == true) "USB/External"
+                    else "System/Internal",
+                    mimeType = c.getString(mimeIdx),
+                    durationMs = c.getLong(durIdx),
+                    sizeBytes = c.getLong(sizeIdx),
+                    dateModified = c.getLong(modIdx),
+                    trackNumber = c.getInt(trackIdx)
+                )
+            }
+        }
+
+        dao.clear()
+        dao.upsertAll(items)
+    }
 }
