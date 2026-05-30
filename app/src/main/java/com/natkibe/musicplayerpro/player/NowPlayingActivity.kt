@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.natkibe.musicplayerpro.MusicPlayerProApp
 import com.natkibe.musicplayerpro.R
+import com.natkibe.musicplayerpro.data.AudioItemEntity
 import com.natkibe.musicplayerpro.floating.FloatingControlsService
 import kotlinx.coroutines.launch
 
@@ -17,8 +18,8 @@ class NowPlayingActivity : AppCompatActivity() {
 
     private val container by lazy { (application as MusicPlayerProApp).appContainer }
     private lateinit var adapter: SongAdapter
-    private var index = 0
     private var currentFolder: String = "Music"
+    private var songs: List<AudioItemEntity> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,8 +28,9 @@ class NowPlayingActivity : AppCompatActivity() {
         currentFolder = intent.getStringExtra("folder") ?: "Music"
 
         adapter = SongAdapter { item ->
-            lifecycleScope.launch {
-                container.playerHolder.play(item)
+            val index = songs.indexOf(item)
+            if (index >= 0) {
+                container.playerHolder.playQueue(songs, index)
                 findViewById<TextView>(R.id.nowPlayingTitle).text = item.title
             }
         }
@@ -41,44 +43,38 @@ class NowPlayingActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.nextButton).setOnClickListener {
-            lifecycleScope.launch {
-                val rows = container.libraryRepository.getSongs(currentFolder)
-                if (rows.isNotEmpty()) {
-                    index = (index + 1) % rows.size
-                    container.playerHolder.play(rows[index])
-                    findViewById<TextView>(R.id.nowPlayingTitle).text = rows[index].title
-                }
-            }
+            container.playerHolder.player.seekToNext()
         }
 
         findViewById<Button>(R.id.prevButton).setOnClickListener {
-            lifecycleScope.launch {
-                val rows = container.libraryRepository.getSongs(currentFolder)
-                if (rows.isNotEmpty()) {
-                    index = (index - 1 + rows.size) % rows.size
-                    container.playerHolder.play(rows[index])
-                    findViewById<TextView>(R.id.nowPlayingTitle).text = rows[index].title
-                }
-            }
+            container.playerHolder.player.seekToPrevious()
         }
 
         findViewById<Button>(R.id.repeatButton).setOnClickListener {
             container.playerHolder.cycleRepeat()
+            val mode = when (container.playerHolder.player.repeatMode) {
+                androidx.media3.common.Player.REPEAT_MODE_ONE -> "Repeat One"
+                androidx.media3.common.Player.REPEAT_MODE_ALL -> "Repeat All"
+                else -> "Repeat Off"
+            }
+            findViewById<TextView>(R.id.nowPlayingTitle).text = mode
         }
 
         findViewById<Button>(R.id.speedButton).setOnClickListener {
             container.playerHolder.cycleSpeed()
+            val speed = container.playerHolder.getCurrentSpeed()
+            findViewById<TextView>(R.id.nowPlayingTitle).text = "Speed: ${speed}x"
         }
 
         findViewById<Button>(R.id.floatingButton).setOnClickListener {
             startService(Intent(this, FloatingControlsService::class.java))
         }
 
-        // Load songs but don't auto-play
+        // Load songs
         lifecycleScope.launch {
-            val rows = container.libraryRepository.getSongs(currentFolder)
-            adapter.submit(rows)
-            if (rows.isNotEmpty()) {
+            songs = container.libraryRepository.getSongs(currentFolder)
+            adapter.submit(songs)
+            if (songs.isNotEmpty()) {
                 findViewById<TextView>(R.id.nowPlayingTitle).text =
                     "Tap a song to play"
             } else {

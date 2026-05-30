@@ -20,6 +20,9 @@ class PlayerHolder(
     private var current: AudioItemEntity? = null
     private val speeds = listOf(1.0f, 1.25f, 1.5f, 0.75f)
     private var speedIndex = 0
+    private var isShuffled = false
+    private var queue: List<AudioItemEntity> = emptyList()
+    private var shuffleOrder: List<Int> = emptyList()
 
     suspend fun play(item: AudioItemEntity) {
         current = item
@@ -30,6 +33,15 @@ class PlayerHolder(
             player.seekTo(saved.positionMs)
         }
         player.play()
+    }
+
+    fun playQueue(items: List<AudioItemEntity>, startIndex: Int = 0) {
+        queue = items
+        val mediaItems = items.map { MediaItem.fromUri(it.uri) }
+        player.setMediaItems(mediaItems, startIndex, 0)
+        player.prepare()
+        player.play()
+        current = items.getOrNull(startIndex)
     }
 
     fun toggle() {
@@ -44,10 +56,17 @@ class PlayerHolder(
         }
     }
 
+    fun toggleShuffle() {
+        isShuffled = !isShuffled
+        player.shuffleModeEnabled = isShuffled
+    }
+
     fun cycleSpeed() {
         speedIndex = (speedIndex + 1) % speeds.size
         player.playbackParameters = PlaybackParameters(speeds[speedIndex])
     }
+
+    fun getCurrentSpeed(): Float = speeds[speedIndex]
 
     suspend fun saveProgress() {
         val item = current ?: return
