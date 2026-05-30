@@ -1,0 +1,7 @@
+appId: com.natkibe.musicplayerpro
+---
+- launchApp
+- tapOn: "Settings"
+- assertVisible: "Toggle artwork thumbnails"
+- tapOn: "Toggle floating controls"
+- tapOn: "Close"

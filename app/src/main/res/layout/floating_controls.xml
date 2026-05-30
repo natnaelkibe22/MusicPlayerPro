@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:alpha="0.82"
+    android:background="@drawable/bg_card"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Button
+        android:id="@+id/floatingPrevButton"
+        android:text="◀"
+        android:layout_width="80dp"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/floatingPlayPauseButton"
+        android:text="▶/Ⅱ"
+        android:layout_width="120dp"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/floatingNextButton"
+        android:text="▶"
+        android:layout_width="80dp"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/floatingCloseButton"
+        android:text="✕"
+        android:layout_width="80dp"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <TextView
+            android:text="Music Player Pro"
+            android:textColor="@color/text"
+            android:textSize="30sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/refreshButton"
+                android:text="Refresh Library"
+                android:layout_width="wrap_content"
+                android:layout_height="64dp" />
+
+            <Button
+                android:id="@+id/settingsButton"
+                android:text="Settings"
+                android:layout_width="wrap_content"
+                android:layout_height="64dp" />
+
+            <TextView
+                android:id="@+id/statusText"
+                android:text="Ready"
+                android:textColor="@color/text"
+                android:padding="18dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/folderList"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/settingsPanel"
+        android:visibility="gone"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@color/card"
+        android:layout_gravity="end"
+        android:layout_width="360dp"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:text="Settings"
+            android:textColor="@color/text"
+            android:textSize="26sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/toggleArtworkButton"
+            android:text="Toggle artwork thumbnails"
+            android:layout_width="match_parent"
+            android:layout_height="64dp" />
+
+        <Button
+            android:id="@+id/toggleFloatingButton"
+            android:text="Toggle floating controls"
+            android:layout_width="match_parent"
+            android:layout_height="64dp" />
+
+        <Button
+            android:id="@+id/closeSettingsButton"
+            android:text="Close"
+            android:layout_width="match_parent"
+            android:layout_height="64dp" />
+    </LinearLayout>
+
+</FrameLayout>

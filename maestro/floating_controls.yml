@@ -1,0 +1,6 @@
+appId: com.natkibe.musicplayerpro
+---
+- launchApp
+- tapOn: "Settings"
+- tapOn: "Toggle floating controls"
+- tapOn: "Close"

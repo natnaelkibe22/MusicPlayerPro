@@ -1,0 +1,6 @@
+appId: com.natkibe.musicplayerpro
+---
+- launchApp
+- assertVisible: "Music Player Pro"
+- tapOn: "Refresh Library"
+- assertVisible: "Ready"

@@ -1,0 +1,8 @@
+appId: com.natkibe.musicplayerpro
+---
+- launchApp
+- tapOn: "Refresh Library"
+# Requires fixture audio on device and folder selection.
+- tapOn: "Play/Pause"
+- tapOn: "Repeat"
+- tapOn: "Speed"
